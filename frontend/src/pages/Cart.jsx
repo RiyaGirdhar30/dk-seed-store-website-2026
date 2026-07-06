@@ -1,9 +1,12 @@
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { CartContext } from "../context/CartContext";
 
 function Cart() {
 
   const { cartItems, removeFromCart, clearCart,} = useContext(CartContext);
+
+  const [paymentMethod, setPaymentMethod] =
+  useState("Online");
 
 const totalPrice = cartItems.reduce(
   (total, item) =>
@@ -22,6 +25,49 @@ console.log({
   userEmail: user?.email,
 });
   try {
+
+    if (paymentMethod === "COD") {
+
+  const orderResponse = await fetch(
+    "https://dk-seed-store-backend.onrender.com/api/orders",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        products: cartItems,
+        totalPrice,
+        userEmail: user?.email,
+        paymentMethod: "COD",
+        paymentStatus: "Pending",
+      }),
+    }
+  );
+
+  const orderData = await orderResponse.json();
+
+  console.log(orderData);
+
+  await fetch(
+    "https://dk-seed-store-backend.onrender.com/api/products/update-stock",
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        products: cartItems,
+      }),
+    }
+  );
+
+  alert("Order Placed Successfully (Cash on Delivery) ✅");
+
+  clearCart();
+
+  return;
+}
 
     const razorpayResponse = await fetch(
   "https://dk-seed-store-backend.onrender.com/api/payment/create-order",
@@ -68,6 +114,8 @@ const options = {
         products: cartItems,
         totalPrice,
         userEmail: user?.email,
+         paymentMethod: "Online",
+  paymentStatus: "Paid",
       }),
     }
   );
@@ -184,6 +232,53 @@ paymentObject.open();
           >
             Total: ₹{totalPrice}
           </div>
+
+          <div
+  style={{
+    marginTop: "25px",
+    marginBottom: "20px",
+  }}
+>
+  <h3>Select Payment Method</h3>
+
+  <label
+    style={{
+      display: "block",
+      margin: "10px 0",
+      cursor: "pointer",
+    }}
+  >
+    <input
+      type="radio"
+      value="Online"
+      checked={paymentMethod === "Online"}
+      onChange={(e) =>
+        setPaymentMethod(e.target.value)
+      }
+    />
+
+    {" "}Pay Online (Razorpay)
+  </label>
+
+  <label
+    style={{
+      display: "block",
+      margin: "10px 0",
+      cursor: "pointer",
+    }}
+  >
+    <input
+      type="radio"
+      value="COD"
+      checked={paymentMethod === "COD"}
+      onChange={(e) =>
+        setPaymentMethod(e.target.value)
+      }
+    />
+
+    {" "}Cash on Delivery
+  </label>
+</div>
 
           <button
   onClick={placeOrder}
