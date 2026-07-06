@@ -25,7 +25,7 @@ console.log({
   userEmail: user?.email,
 });
   try {
-
+console.log("Selected Payment Method:", paymentMethod);
     if (paymentMethod === "COD") {
 
   const orderResponse = await fetch(
