@@ -1,28 +1,20 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useContext } from "react";
 import { CartContext } from "../context/CartContext";
+import { useAuth } from "../context/AuthContext";
 import "../styles/Navbar.css";
 
 function Navbar() {
   const { cartItems } = useContext(CartContext);
 
-  const [user, setUser] = useState(null);
+  const { user, logout } = useAuth();
 
   const [menuOpen, setMenuOpen] = useState(false);
 
-useEffect(() => {
-  const storedUser =
-    JSON.parse(localStorage.getItem("dkUser"));
-
-  setUser(storedUser);
-}, []);
-
 const handleLogout = () => {
-   setMenuOpen(false);
-  localStorage.removeItem("dkUser");
-
-  window.location.href = "/";
+  setMenuOpen(false);
+  logout();
 };
 
   return (
@@ -89,6 +81,15 @@ const handleLogout = () => {
         <li>
   <Link to="/order-history" onClick={()=>setMenuOpen(false)}>
     My Orders
+  </Link>
+</li>
+
+<li>
+  <Link
+    to="/profile"
+    onClick={() => setMenuOpen(false)}
+  >
+    My Profile
   </Link>
 </li>
 

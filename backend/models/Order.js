@@ -18,6 +18,33 @@ const orderSchema = new mongoose.Schema(
       required: true,
     },
 
+    userId: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "User",
+},
+
+shippingAddress: {
+  street: {
+    type: String,
+    default: "",
+  },
+
+  city: {
+    type: String,
+    default: "",
+  },
+
+  state: {
+    type: String,
+    default: "",
+  },
+
+  pincode: {
+    type: String,
+    default: "",
+  },
+},
+
     totalPrice: Number,
 
     // ✅ NEW
@@ -34,10 +61,29 @@ const orderSchema = new mongoose.Schema(
       default: "Pending",
     },
 
-    status: {
-      type: String,
-      default: "Pending",
-    },
+    razorpayOrderId: {
+  type: String,
+},
+
+razorpayPaymentId: {
+  type: String,
+},
+
+razorpaySignature: {
+  type: String,
+},
+
+  status: {
+  type: String,
+  enum: [
+    "Pending",
+    "Confirmed",
+    "Shipped",
+    "Delivered",
+    "Cancelled",
+  ],
+  default: "Pending",
+},
 
     orderDate: {
       type: Date,

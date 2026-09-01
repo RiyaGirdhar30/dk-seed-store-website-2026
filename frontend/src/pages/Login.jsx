@@ -1,41 +1,61 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 function Login() {
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+ const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    if (
-  email === "admin@dkseed.com" &&
-  password !== "dk123"
-) {
-  alert("Invalid Admin Password");
-  return;
-}
+  if (loading) {
+    return;
+  }
 
-const isAdmin =
-  email === "admin@dkseed.com" &&
-  password === "dk123";
+  setLoading(true);
 
-const user = {
-  email,
-  isAdmin,
-};
+  try {
+   const response = await fetch(
+  `${API_URL}/api/auth/login`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      }
+    );
 
-localStorage.setItem(
-  "dkUser",
-  JSON.stringify(user)
-);
+    const data = await response.json();
 
-alert("Login Successful");
+    if (!response.ok) {
+      alert(data.message || "Login failed");
+      return;
+    }
+
+    // Save authentication data
+  login(data.user, data.token);
+
 navigate("/");
-window.location.reload();
-  };
+
+  } catch (error) {
+    console.error("Login error:", error);
+    alert("Unable to connect to the server");
+  }
+  finally {
+  setLoading(false);
+}
+};
 
   return (
     <div
@@ -72,6 +92,7 @@ window.location.reload();
           onChange={(e) =>
             setEmail(e.target.value)
           }
+          required
           style={{
             width: "100%",
             padding: "12px",
@@ -86,6 +107,7 @@ window.location.reload();
           onChange={(e) =>
             setPassword(e.target.value)
           }
+          required
           style={{
             width: "100%",
             padding: "12px",
@@ -95,16 +117,17 @@ window.location.reload();
 
         <button
           type="submit"
+          disabled={loading}
           style={{
             width: "100%",
             padding: "12px",
             background: "#2e7d32",
             color: "white",
             border: "none",
-            cursor: "pointer",
+           cursor: loading ? "not-allowed" : "pointer",
           }}
         >
-          Login
+           {loading ? "Logging in..." : "Login"}
         </button>
 
         <p

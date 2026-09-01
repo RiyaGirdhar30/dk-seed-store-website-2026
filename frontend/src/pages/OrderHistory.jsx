@@ -1,110 +1,179 @@
 import { useEffect, useState } from "react";
+import { useAuth } from "../context/AuthContext";
+import "../styles/OrderHistory.css";
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 function OrderHistory() {
   const [orders, setOrders] = useState([]);
 
- useEffect(() => {
-  const user = JSON.parse(
-    localStorage.getItem("dkUser")
-  );
-console.log(user);
-  fetch(
-    "https://dk-seed-store-backend.onrender.com/api/orders"
-  )
-    .then((res) => res.json())
-    .then((data) => {
+  const { token } = useAuth();
 
-      const userOrders =
-        data.filter(
-          (order) =>
-            order.userEmail ===
-            user?.email
+useEffect(() => {
+  const fetchOrders = async () => {
+    try {
+      const response = await fetch(
+        `${API_URL}/api/orders`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error(
+          data.message ||
+            "Unable to fetch orders"
         );
 
-      setOrders(userOrders);
-    })
-    .catch((error) => {
-      console.log(error);
-    });
+        return;
+      }
 
-}, []);
+      setOrders(data);
+    } catch (error) {
+      console.error(
+        "Order history error:",
+        error
+      );
+    }
+  };
+
+  if (token) {
+    fetchOrders();
+  }
+}, [token]);
 
   return (
-    <div
-      style={{
-        padding: "30px",
-      }}
-    >
+   <div className="order-history">
       <h1>My Orders</h1>
 
       {orders.length === 0 ? (
         <p>No Orders Found</p>
       ) : (
         orders.map((order) => (
-          <div
-            key={order._id}
-            style={{
-              border: "1px solid #ddd",
-              padding: "20px",
-              marginBottom: "20px",
-              borderRadius: "10px",
-            }}
-          >
-            <h3>
-              Order ID:
-              {order._id.slice(-6)}
-            </h3>
+        <div
+  key={order._id}
+  className="order-card"
+>
+  {/* ORDER HEADER */}
+  <div className= "order-header">
+   
+   <h3>
+      Order #{order._id.slice(-6)}
+    </h3>
 
-            <p>
-              Total: ₹{order.totalPrice}
-            </p>
+   <span
+  className="order-status"
+  style={{
+    background:
+      order.status === "Pending"
+        ? "#ff9800"
+        : order.status === "Confirmed"
+        ? "#2196f3"
+        : order.status === "Shipped"
+        ? "#673ab7"
+        : order.status === "Delivered"
+        ? "#4caf50"
+        : "#f44336",
+  }}
+>
 
-           <p>
-  Status:
+      {order.status}
+    </span>
+  </div>
 
-  <span
-    style={{
-      marginLeft: "10px",
-      padding: "5px 12px",
-      borderRadius: "20px",
-      color: "white",
-      backgroundColor:
-        order.status === "Pending"
-          ? "orange"
-          : order.status === "Packed"
-          ? "blue"
-          : order.status === "Shipped"
-          ? "purple"
-          : "green",
-    }}
-  >
-    {order.status}
-  </span>
-</p>
+  {/* DATE */}
+  <p>
+    📅 <strong>Date:</strong>{" "}
+    {new Date(
+      order.orderDate
+    ).toLocaleDateString()}
+  </p>
 
-            <p>
-              Date:
-              {new Date(
-                order.orderDate
-              ).toLocaleDateString()}
-            </p>
+  {/* PRODUCTS */}
+  <h4>📦 Products</h4>
 
-            <h4>Products:</h4>
-
-{order.products.map(
+  {order.products.map(
   (product, index) => (
-    <p key={index}>
-      • {product.name}
-      {" × "}
-      {product.quantity || 1}
-      {" - ₹"}
-      {product.price *
-        (product.quantity || 1)}
-    </p>
+    <div
+      key={index}
+      className="order-product"
+    >
+      <span>
+        {product.name} ×{" "}
+        {product.quantity || 1}
+      </span>
+
+      <strong>
+        ₹
+        {product.price *
+          (product.quantity || 1)}
+      </strong>
+    </div>
   )
 )}
 
-          </div>
+  {/* TOTAL */}
+  <div className="order-total">
+    💰 Total: ₹{order.totalPrice}
+  </div>
+
+  {/* PAYMENT */}
+  <div className="order-section">
+    <h4 style={{ marginTop: 0 }}>
+      💳 Payment
+    </h4>
+
+    <p>
+      <strong>Method:</strong>{" "}
+      {order.paymentMethod}
+    </p>
+
+    <p>
+      <strong>Status:</strong>{" "}
+      <span
+        style={{
+          fontWeight: "bold",
+          color:
+            order.paymentStatus === "Paid"
+              ? "#2e7d32"
+              : "#ff9800",
+        }}
+      >
+        {order.paymentStatus}
+      </span>
+    </p>
+  </div>
+
+  {/* SHIPPING ADDRESS */}
+  <div className="order-section">
+    <h4 style={{ marginTop: 0 }}>
+      📍 Shipping Address
+    </h4>
+
+    <p>
+      {order.shippingAddress?.street ||
+        "Address not provided"}
+    </p>
+
+    <p>
+      {order.shippingAddress?.city &&
+        `${order.shippingAddress.city}, `}
+      {order.shippingAddress?.state}
+    </p>
+
+    <p>
+      <strong>
+        Pincode:
+      </strong>{" "}
+      {order.shippingAddress?.pincode ||
+        "N/A"}
+    </p>
+  </div>
+</div>
         ))
       )}
     </div>

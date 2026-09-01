@@ -1,0 +1,100 @@
+.order-history {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+.order-history h1 {
+  margin-bottom: 30px;
+}
+
+.order-card {
+  border: 1px solid #ddd;
+  padding: 25px;
+  margin-bottom: 25px;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.order-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  flex-wrap: wrap;
+  margin-bottom: 15px;
+}
+
+.order-header h3 {
+  margin: 0;
+}
+
+.order-status {
+  padding: 6px 14px;
+  border-radius: 20px;
+  color: white;
+  font-weight: bold;
+}
+
+.order-products {
+  margin-top: 15px;
+}
+
+.order-product {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  padding: 12px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.order-total {
+  margin-top: 18px;
+  font-size: 20px;
+  font-weight: bold;
+  color: #2e7d32;
+}
+
+.order-section {
+  margin-top: 20px;
+  padding: 15px;
+  background: #f7f7f7;
+  border-radius: 8px;
+}
+
+.order-section h4 {
+  margin-top: 0;
+  margin-bottom: 12px;
+}
+
+.order-section p {
+  margin: 7px 0;
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+  .order-history {
+    padding: 25px 15px;
+  }
+
+  .order-card {
+    padding: 18px;
+  }
+
+  .order-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .order-product {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .order-total {
+    font-size: 18px;
+  }
+}

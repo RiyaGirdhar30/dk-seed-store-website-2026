@@ -1,5 +1,7 @@
 const express = require("express");
 const Product = require("../models/Product");
+const protect = require("../middleware/authMiddleware");
+const adminOnly = require("../middleware/adminMiddleware");
 
 const router = express.Router();
 
@@ -71,7 +73,7 @@ router.get("/addwheat", async (req, res) => {
   }
 });
 
-router.post("/", async (req, res) => {
+router.post("/", protect, adminOnly, async (req, res) => {
   try {
     const product = await Product.create(req.body);
 
@@ -83,36 +85,67 @@ router.post("/", async (req, res) => {
   }
 });
 
-router.put("/update-stock", async (req, res) => {
-  console.log("========== UPDATE STOCK ==========");
-  console.log(req.body);
-
+router.put("/update-stock", protect, async (req, res) => {
   try {
     const { products } = req.body;
 
+    if (!Array.isArray(products) || products.length === 0) {
+      return res.status(400).json({
+        message: "No products provided",
+      });
+    }
+
     for (const item of products) {
-      console.log("Item:", item);
+      const quantity = item.quantity;
 
-      const product = await Product.findById(item._id);
-
-      console.log("Found Product:", product);
-
-      if (!product) {
-        console.log("Product not found!");
-        continue;
+      // Validate product ID
+      if (!item._id) {
+        return res.status(400).json({
+          message: "Product ID is required",
+        });
       }
 
-      console.log("Old Stock:", product.stock);
-      console.log("Purchased Quantity:", item.quantity);
+      // Validate quantity
+      if (
+        !Number.isInteger(quantity) ||
+        quantity <= 0
+      ) {
+        return res.status(400).json({
+          message: "Invalid quantity",
+        });
+      }
 
-      product.stock =
-        product.stock - (item.quantity || 1);
+      // Atomically decrease stock only if enough stock exists
+      const updatedProduct =
+        await Product.findOneAndUpdate(
+          {
+            _id: item._id,
+            stock: { $gte: quantity },
+          },
+          {
+            $inc: {
+              stock: -quantity,
+            },
+          },
+          {
+            new: true,
+          }
+        );
 
-      console.log("New Stock:", product.stock);
+      if (!updatedProduct) {
+        const product =
+          await Product.findById(item._id);
 
-      await product.save();
+        if (!product) {
+          return res.status(404).json({
+            message: "Product not found",
+          });
+        }
 
-      console.log("Saved Successfully");
+        return res.status(400).json({
+          message: `Not enough stock for ${product.name}. Available stock: ${product.stock}`,
+        });
+      }
     }
 
     res.json({
@@ -120,7 +153,7 @@ router.put("/update-stock", async (req, res) => {
     });
 
   } catch (error) {
-    console.log(error);
+    console.error("Update stock error:", error);
 
     res.status(500).json({
       message: error.message,
@@ -128,7 +161,7 @@ router.put("/update-stock", async (req, res) => {
   }
 });
 
-router.put("/:id", async (req, res) => {
+router.put("/:id", protect, adminOnly, async (req, res) => {
   try {
     const updatedProduct =
       await Product.findByIdAndUpdate(
@@ -147,7 +180,7 @@ router.put("/:id", async (req, res) => {
   }
 });
 
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", protect, adminOnly, async (req, res) => {
   try {
     await Product.findByIdAndDelete(
       req.params.id

@@ -1,5 +1,4 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-
 import Navbar from "./components/Navbar";
 import Home from "./pages/Home";
 import Products from "./pages/Products";
@@ -14,6 +13,7 @@ import Orders from "./pages/Orders";
 import Dashboard from "./pages/Dashboard";
 import OrderHistory from "./pages/OrderHistory";
 import ProtectedAdmin from "./components/ProtectedAdmin";
+import Profile from "./pages/Profile";
 
 function App() {
   return (
@@ -61,6 +61,11 @@ function App() {
 
         <Route path="/order-history" element={<OrderHistory />}/>
         
+        <Route
+  path="/profile"
+  element={<Profile />}
+/>
+
       </Routes>
     </BrowserRouter>
   );

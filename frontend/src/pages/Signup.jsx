@@ -1,36 +1,65 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 function Signup() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] =
     useState("");
+    const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    if (password !== confirmPassword) {
-      alert("Passwords do not match");
+  if (loading) {
+    return;
+  }
+
+  if (password !== confirmPassword) {
+    alert("Passwords do not match");
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    const response = await fetch(
+  `${API_URL}/api/auth/register`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name,
+          email,
+          password,
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      alert(data.message || "Registration failed");
       return;
     }
 
- const user = {
-  name,
-  email,
+    alert("Signup Successful");
+
+    navigate("/login");
+  } catch (error) {
+    console.error("Signup error:", error);
+    alert("Unable to connect to the server");
+  }
+  finally {
+  setLoading(false);
+}
 };
-
-localStorage.setItem(
-  "dkUser",
-  JSON.stringify(user)
-);
-
-alert("Signup Successful");
-navigate("/");
-window.location.reload();
-  };
 
   return (
     <div
@@ -68,6 +97,7 @@ window.location.reload();
           onChange={(e) =>
             setName(e.target.value)
           }
+          required
           style={{
             width: "100%",
             padding: "12px",
@@ -82,6 +112,7 @@ window.location.reload();
           onChange={(e) =>
             setEmail(e.target.value)
           }
+          required
           style={{
             width: "100%",
             padding: "12px",
@@ -96,6 +127,8 @@ window.location.reload();
           onChange={(e) =>
             setPassword(e.target.value)
           }
+          required
+minLength={6}
           style={{
             width: "100%",
             padding: "12px",
@@ -110,6 +143,7 @@ window.location.reload();
           onChange={(e) =>
             setConfirmPassword(e.target.value)
           }
+          required
           style={{
             width: "100%",
             padding: "12px",
@@ -119,16 +153,17 @@ window.location.reload();
 
         <button
           type="submit"
+           disabled={loading}
           style={{
             width: "100%",
             padding: "12px",
             background: "#2e7d32",
             color: "white",
             border: "none",
-            cursor: "pointer",
+          cursor: loading ? "not-allowed" : "pointer",
           }}
         >
-          Create Account
+         {loading ? "Creating Account..." : "Create Account"}
         </button>
       </form>
     </div>

@@ -1,6 +1,15 @@
 const express = require("express");
 const dotenv = require("dotenv");
+const dns = require("node:dns");
+
 dotenv.config();
+
+// Fix MongoDB Atlas SRV DNS resolution
+dns.setServers([
+  "1.1.1.1",
+  "8.8.8.8",
+]);
+
 const connectDB = require("./config/db");
 const productRoutes =
   require("./routes/productRoutes");
@@ -10,8 +19,10 @@ const orderRoutes =
 
 const paymentRoutes = require("./routes/paymentRoutes");
 
-console.log(process.env.RAZORPAY_KEY_ID);
-console.log(process.env.RAZORPAY_KEY_SECRET);
+const authRoutes = require("./routes/authRoutes");
+
+// console.log(process.env.RAZORPAY_KEY_ID);
+// console.log(process.env.RAZORPAY_KEY_SECRET);
 
 connectDB();
 
@@ -28,6 +39,8 @@ app.use("/api/products", productRoutes);
 app.use("/api/orders", orderRoutes);
 
 app.use("/api/payment", paymentRoutes);
+
+app.use("/api/auth", authRoutes);
 
 app.get("/", (req, res) => {
   res.send("DK Seed Store Backend Running 🚀");
