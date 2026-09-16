@@ -1,13 +1,11 @@
 import { Navigate } from "react-router-dom";
 
-function ProtectedAdmin({
-  children,
-}) {
+function ProtectedAdmin({ children }) {
   const user = JSON.parse(
     localStorage.getItem("dkUser")
   );
 
-  if (!user?.isAdmin) {
+  if (user?.role !== "admin") {
     return <Navigate to="/" />;
   }
 

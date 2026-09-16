@@ -62,16 +62,22 @@ const handleLogout = () => {
         <Link to="/cart" onClick={()=>setMenuOpen(false)}>Cart ({cartItems.length})</Link>
         </li>
 
-       {user?.isAdmin && (
+     {user?.role === "admin" && (
   <>
     <li>
-      <Link to="/dashboard" onClick={()=>setMenuOpen(false)}>
+      <Link
+        to="/dashboard"
+        onClick={() => setMenuOpen(false)}
+      >
         Dashboard
       </Link>
     </li>
 
     <li>
-      <Link to="/orders" onClick={()=>setMenuOpen(false)}>
+      <Link
+        to="/orders"
+        onClick={() => setMenuOpen(false)}
+      >
         Orders
       </Link>
     </li>
