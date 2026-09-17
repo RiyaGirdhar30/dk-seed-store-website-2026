@@ -1,50 +1,87 @@
 import { useEffect, useState } from "react";
+import { useAuth } from "../context/AuthContext";
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 function Orders() {
   const [orders, setOrders] = useState([]);
 
+  const { token } = useAuth();
+
+  const fetchOrders = async () => {
+    try {
+      const response = await fetch(
+        `${API_URL}/api/orders`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error(
+          data.message || "Unable to fetch orders"
+        );
+        return;
+      }
+
+      setOrders(data);
+    } catch (error) {
+      console.error(
+        "Admin orders error:",
+        error
+      );
+    }
+  };
+
   useEffect(() => {
-    fetch("https://dk-seed-store-backend.onrender.com/api/orders")
-      .then((res) => res.json())
-      .then((data) => {
-        setOrders(data);
-      })
-      .catch((error) => {
-        console.log(error);
-      });
-  }, []);
+    if (token) {
+      fetchOrders();
+    }
+  }, [token]);
 
   const updateStatus = async (
-  orderId,
-  newStatus
-) => {
-  try {
-    await fetch(
-      `https://dk-seed-store-backend.onrender.com/api/orders/${orderId}`,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type":
-            "application/json",
-        },
-        body: JSON.stringify({
-          status: newStatus,
-        }),
+    orderId,
+    newStatus
+  ) => {
+    try {
+      const response = await fetch(
+        `${API_URL}/api/orders/${orderId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type":
+              "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            status: newStatus,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(
+          data.message ||
+            "Unable to update order status"
+        );
+        return;
       }
-    );
 
-    const response = await fetch(
-      "https://dk-seed-store-backend.onrender.com/api/orders"
-    );
+      await fetchOrders();
 
-    const data =
-      await response.json();
-
-    setOrders(data);
-  } catch (error) {
-    console.log(error);
-  }
-};
+    } catch (error) {
+      console.error(
+        "Update status error:",
+        error
+      );
+    }
+  };
 
   return (
     <div
@@ -73,32 +110,39 @@ function Orders() {
             </h3>
 
             <p>
+              Customer:
+              {order.userEmail}
+            </p>
+
+            <p>
               Total:
               ₹{order.totalPrice}
             </p>
 
-<p>
-  Status:
+            <p>
+              Status:
 
-  <span
-    style={{
-      marginLeft: "10px",
-      padding: "5px 12px",
-      borderRadius: "20px",
-      color: "white",
-      backgroundColor:
-        order.status === "Pending"
-          ? "orange"
-          : order.status === "Packed"
-          ? "blue"
-          : order.status === "Shipped"
-          ? "purple"
-          : "green",
-    }}
-  >
-    {order.status}
-  </span>
-</p>
+              <span
+                style={{
+                  marginLeft: "10px",
+                  padding: "5px 12px",
+                  borderRadius: "20px",
+                  color: "white",
+                  backgroundColor:
+                    order.status === "Pending"
+                      ? "orange"
+                      : order.status === "Confirmed"
+                      ? "blue"
+                      : order.status === "Shipped"
+                      ? "purple"
+                      : order.status === "Delivered"
+                      ? "green"
+                      : "red",
+                }}
+              >
+                {order.status}
+              </span>
+            </p>
 
             <p>
               Date:
@@ -109,48 +153,52 @@ function Orders() {
 
             <h4>Products:</h4>
 
-            <select
-  value={order.status}
-  onChange={(e) =>
-    updateStatus(
-      order._id,
-      e.target.value
-    )
-  }
-  style={{
-    marginBottom: "15px",
-    padding: "8px",
-  }}
->
-  <option value="Pending">
-    Pending
-  </option>
-
-  <option value="Packed">
-    Packed
-  </option>
-
-  <option value="Shipped">
-    Shipped
-  </option>
-
-  <option value="Delivered">
-    Delivered
-  </option>
-</select>
-
             {order.products.map(
-  (product, index) => (
-    <p key={index}>
-      • {product.name}
-      {" × "}
-      {product.quantity || 1}
-      {" - ₹"}
-      {product.price *
-        (product.quantity || 1)}
-    </p>
-  )
-)}
+              (product, index) => (
+                <p key={index}>
+                  • {product.name}
+                  {" × "}
+                  {product.quantity || 1}
+                  {" - ₹"}
+                  {product.price *
+                    (product.quantity || 1)}
+                </p>
+              )
+            )}
+
+            <select
+              value={order.status}
+              onChange={(e) =>
+                updateStatus(
+                  order._id,
+                  e.target.value
+                )
+              }
+              style={{
+                marginTop: "10px",
+                padding: "8px",
+              }}
+            >
+              <option value="Pending">
+                Pending
+              </option>
+
+              <option value="Confirmed">
+                Confirmed
+              </option>
+
+              <option value="Shipped">
+                Shipped
+              </option>
+
+              <option value="Delivered">
+                Delivered
+              </option>
+
+              <option value="Cancelled">
+                Cancelled
+              </option>
+            </select>
           </div>
         ))
       )}
