@@ -36,6 +36,24 @@ router.get("/", protect, async (req, res) => {
   }
 });
 
+// Get My Orders
+// Always returns only the currently logged-in user's orders
+router.get("/my", protect, async (req, res) => {
+  try {
+    const orders = await Order.find({
+      userId: req.user.userId,
+    }).sort({
+      orderDate: -1,
+    });
+
+    res.json(orders);
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+});
+
 // Get Single Order
 router.get("/:id", protect, async (req, res) => {
   try {
