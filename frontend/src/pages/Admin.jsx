@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useAuth } from "../context/AuthContext";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -16,6 +17,8 @@ function Admin() {
 
   const [editingId, setEditingId] = useState(null);
 
+  const { token } = useAuth();
+
   // =====================================================
   // FETCH ALL PRODUCTS
   // =====================================================
@@ -30,7 +33,8 @@ function Admin() {
 
       if (!response.ok) {
         console.error(
-          data.message || "Unable to fetch products"
+          data.message ||
+            "Unable to fetch products"
         );
         return;
       }
@@ -55,7 +59,10 @@ function Admin() {
 
     const formData = new FormData();
 
-    formData.append("file", imageFile);
+    formData.append(
+      "file",
+      imageFile
+    );
 
     formData.append(
       "upload_preset",
@@ -98,7 +105,19 @@ function Admin() {
   // =====================================================
 
   const handleSubmit = async () => {
-    if (!name || !price || !category || !stock) {
+    if (!token) {
+      alert(
+        "Not authorized. Please login as admin."
+      );
+      return;
+    }
+
+    if (
+      !name ||
+      !price ||
+      !category ||
+      !stock
+    ) {
       alert(
         "Please fill all required product fields"
       );
@@ -106,41 +125,51 @@ function Admin() {
     }
 
     if (!imageFile) {
-      alert("Please select an image");
+      alert(
+        "Please select an image"
+      );
       return;
     }
 
-    const imageUrl = await uploadImage();
+    const imageUrl =
+      await uploadImage();
 
     if (!imageUrl) {
-      alert("Image upload failed");
+      alert(
+        "Image upload failed"
+      );
       return;
     }
 
     try {
-      const response = await fetch(
-        `${API_URL}/api/products`,
-        {
-          method: "POST",
+      const response =
+        await fetch(
+          `${API_URL}/api/products`,
+          {
+            method: "POST",
 
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
+            headers: {
+              "Content-Type":
+                "application/json",
 
-          body: JSON.stringify({
-            name,
-            price: Number(price),
-            category,
-            image: imageUrl,
-            rating: Number(rating),
-            discount,
-            stock: Number(stock),
-          }),
-        }
-      );
+              Authorization:
+                `Bearer ${token}`,
+            },
 
-      const data = await response.json();
+            body: JSON.stringify({
+              name,
+              price: Number(price),
+              category,
+              image: imageUrl,
+              rating: Number(rating),
+              discount,
+              stock: Number(stock),
+            }),
+          }
+        );
+
+      const data =
+        await response.json();
 
       if (!response.ok) {
         alert(
@@ -156,7 +185,6 @@ function Admin() {
 
       await fetchProducts();
 
-      // Clear form
       setName("");
       setPrice("");
       setCategory("");
@@ -182,23 +210,38 @@ function Admin() {
   // =====================================================
 
   const deleteProduct = async (id) => {
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this product?"
-    );
+    if (!token) {
+      alert(
+        "Not authorized. Please login as admin."
+      );
+      return;
+    }
+
+    const confirmDelete =
+      window.confirm(
+        "Are you sure you want to delete this product?"
+      );
 
     if (!confirmDelete) {
       return;
     }
 
     try {
-      const response = await fetch(
-        `${API_URL}/api/products/${id}`,
-        {
-          method: "DELETE",
-        }
-      );
+      const response =
+        await fetch(
+          `${API_URL}/api/products/${id}`,
+          {
+            method: "DELETE",
 
-      const data = await response.json();
+            headers: {
+              Authorization:
+                `Bearer ${token}`,
+            },
+          }
+        );
+
+      const data =
+        await response.json();
 
       if (!response.ok) {
         alert(
@@ -208,7 +251,9 @@ function Admin() {
         return;
       }
 
-      alert("Product Deleted ✅");
+      alert(
+        "Product Deleted ✅"
+      );
 
       await fetchProducts();
     } catch (error) {
@@ -227,81 +272,96 @@ function Admin() {
   // UPDATE PRODUCT
   // =====================================================
 
-  const updateProduct = async () => {
-    if (!editingId) {
-      return;
-    }
-
-    const imageUrl = imageFile
-      ? await uploadImage()
-      : image;
-
-    if (!imageUrl) {
-      alert("Please provide a product image");
-      return;
-    }
-
-    try {
-      const response = await fetch(
-        `${API_URL}/api/products/${editingId}`,
-        {
-          method: "PUT",
-
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
-
-          body: JSON.stringify({
-            name,
-            price: Number(price),
-            category,
-            image: imageUrl,
-            rating: Number(rating),
-            discount,
-            stock: Number(stock),
-          }),
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
+  const updateProduct =
+    async () => {
+      if (!token) {
         alert(
-          data.message ||
-            "Unable to update product"
+          "Not authorized. Please login as admin."
         );
         return;
       }
 
-      alert(
-        "Product Updated Successfully ✅"
-      );
+      if (!editingId) {
+        return;
+      }
 
-      setEditingId(null);
+      const imageUrl =
+        imageFile
+          ? await uploadImage()
+          : image;
 
-      // Clear form
-      setName("");
-      setPrice("");
-      setCategory("");
-      setImage("");
-      setRating("");
-      setDiscount("");
-      setStock("");
-      setImageFile(null);
+      if (!imageUrl) {
+        alert(
+          "Please provide a product image"
+        );
+        return;
+      }
 
-      await fetchProducts();
-    } catch (error) {
-      console.error(
-        "Update product error:",
-        error
-      );
+      try {
+        const response =
+          await fetch(
+            `${API_URL}/api/products/${editingId}`,
+            {
+              method: "PUT",
 
-      alert(
-        "Something went wrong while updating the product"
-      );
-    }
-  };
+              headers: {
+                "Content-Type":
+                  "application/json",
+
+                Authorization:
+                  `Bearer ${token}`,
+              },
+
+              body: JSON.stringify({
+                name,
+                price: Number(price),
+                category,
+                image: imageUrl,
+                rating: Number(rating),
+                discount,
+                stock: Number(stock),
+              }),
+            }
+          );
+
+        const data =
+          await response.json();
+
+        if (!response.ok) {
+          alert(
+            data.message ||
+              "Unable to update product"
+          );
+          return;
+        }
+
+        alert(
+          "Product Updated Successfully ✅"
+        );
+
+        setEditingId(null);
+
+        setName("");
+        setPrice("");
+        setCategory("");
+        setImage("");
+        setRating("");
+        setDiscount("");
+        setStock("");
+        setImageFile(null);
+
+        await fetchProducts();
+      } catch (error) {
+        console.error(
+          "Update product error:",
+          error
+        );
+
+        alert(
+          "Something went wrong while updating the product"
+        );
+      }
+    };
 
   // =====================================================
   // FETCH PRODUCTS WHEN PAGE LOADS
@@ -420,7 +480,9 @@ function Admin() {
 
       {editingId ? (
         <>
-          <button onClick={updateProduct}>
+          <button
+            onClick={updateProduct}
+          >
             Update Product
           </button>
 
@@ -444,7 +506,9 @@ function Admin() {
           </button>
         </>
       ) : (
-        <button onClick={handleSubmit}>
+        <button
+          onClick={handleSubmit}
+        >
           Add Product
         </button>
       )}
@@ -456,91 +520,100 @@ function Admin() {
       {products.length === 0 ? (
         <p>No Products Found</p>
       ) : (
-        products.map((product) => (
-          <div
-            key={product._id}
-            style={{
-              display: "flex",
-              justifyContent:
-                "space-between",
-              alignItems: "center",
-              marginBottom: "10px",
-              padding: "10px",
-              border:
-                "1px solid #ddd",
-            }}
-          >
-            <span>
-              {product.name} - ₹
-              {product.price}
-            </span>
-
+        products.map(
+          (product) => (
             <div
+              key={product._id}
               style={{
                 display: "flex",
-                gap: "10px",
+                justifyContent:
+                  "space-between",
+                alignItems: "center",
+                marginBottom:
+                  "10px",
+                padding: "10px",
+                border:
+                  "1px solid #ddd",
               }}
             >
-              <button
-                onClick={() => {
-                  setEditingId(
-                    product._id
-                  );
+              <span>
+                {product.name} - ₹
+                {product.price}
+              </span>
 
-                  setName(
-                    product.name
-                  );
-
-                  setPrice(
-                    product.price
-                  );
-
-                  setCategory(
-                    product.category
-                  );
-
-                  setImage(
-                    product.image
-                  );
-
-                  setRating(
-                    product.rating
-                  );
-
-                  setDiscount(
-                    product.discount
-                  );
-
-                  setStock(
-                    product.stock
-                  );
-
-                  setImageFile(null);
-                }}
-              >
-                Edit
-              </button>
-
-              <button
-                onClick={() =>
-                  deleteProduct(
-                    product._id
-                  )
-                }
+              <div
                 style={{
-                  background: "red",
-                  color: "white",
-                  border: "none",
-                  padding:
-                    "8px 15px",
-                  cursor: "pointer",
+                  display: "flex",
+                  gap: "10px",
                 }}
               >
-                Delete
-              </button>
+                <button
+                  onClick={() => {
+                    setEditingId(
+                      product._id
+                    );
+
+                    setName(
+                      product.name
+                    );
+
+                    setPrice(
+                      product.price
+                    );
+
+                    setCategory(
+                      product.category
+                    );
+
+                    setImage(
+                      product.image
+                    );
+
+                    setRating(
+                      product.rating
+                    );
+
+                    setDiscount(
+                      product.discount
+                    );
+
+                    setStock(
+                      product.stock
+                    );
+
+                    setImageFile(
+                      null
+                    );
+                  }}
+                >
+                  Edit
+                </button>
+
+                <button
+                  onClick={() =>
+                    deleteProduct(
+                      product._id
+                    )
+                  }
+                  style={{
+                    background:
+                      "red",
+                    color:
+                      "white",
+                    border:
+                      "none",
+                    padding:
+                      "8px 15px",
+                    cursor:
+                      "pointer",
+                  }}
+                >
+                  Delete
+                </button>
+              </div>
             </div>
-          </div>
-        ))
+          )
+        )
       )}
     </div>
   );
