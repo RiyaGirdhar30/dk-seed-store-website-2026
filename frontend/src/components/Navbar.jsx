@@ -81,6 +81,15 @@ const handleLogout = () => {
         Orders
       </Link>
     </li>
+
+     <li>
+      <Link
+        to="/admin"
+        onClick={() => setMenuOpen(false)}
+      >
+        Manage Products
+      </Link>
+    </li>
   </>
 )}
 
