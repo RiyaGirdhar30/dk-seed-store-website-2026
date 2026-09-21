@@ -71,19 +71,16 @@ router.get("/:id", protect, async (req, res) => {
     }
 
     // Customer can only view their own order
-  if (
-  !order.userId ||
-  order.userId.toString() !==
-    req.user.userId.toString()
-) {
-  return res.status(403).json({
-    message:
-      "You are not authorized to view this order",
-  });
-}
+    if (
+      !order.userId ||
+      order.userId.toString() !== req.user.userId.toString()
+    ) {
+      return res.status(403).json({
+        message: "You are not authorized to view this order",
+      });
+    }
 
     res.json(order);
-
   } catch (error) {
     res.status(500).json({
       message: error.message,
@@ -147,10 +144,7 @@ router.post("/", protect, async (req, res) => {
 
       const quantity = Number(item.quantity);
 
-      if (
-        !Number.isInteger(quantity) ||
-        quantity <= 0
-      ) {
+      if (!Number.isInteger(quantity) || quantity <= 0) {
         return res.status(400).json({
           message: `Invalid quantity for ${product.name}`,
         });
@@ -165,25 +159,24 @@ router.post("/", protect, async (req, res) => {
         });
       }
 
-      // Use REAL database price
-   // Use REAL database product details
-orderProducts.push({
-  _id: product._id,
-  name: product.name,
-  price: product.price,
-  quantity: quantity,
-});
+      // Use REAL database product details
+      orderProducts.push({
+        _id: product._id,
+        name: product.name,
+        price: product.price,
+        quantity: quantity,
+      });
 
-// Use REAL database price
-calculatedTotal += product.price * quantity;
+      // Use REAL database price
+      calculatedTotal += product.price * quantity;
     }
 
     // =====================================================
     // CREATE ORDER
     // =====================================================
 
-   const order = await Order.create({
-  products: orderProducts,
+    const order = await Order.create({
+      products: orderProducts,
 
       // NEVER trust frontend email
       userEmail: user.email,
@@ -218,17 +211,13 @@ calculatedTotal += product.price * quantity;
     // ONLINE → STOCK UPDATED AFTER PAYMENT VERIFICATION
     // =====================================================
 
-   if (paymentMethod === "COD") {
-  await updateStock(orderProducts);
-}
+    if (paymentMethod === "COD") {
+      await updateStock(orderProducts);
+    }
 
     res.status(201).json(order);
-
   } catch (error) {
-    console.error(
-      "Create order error:",
-      error
-    );
+    console.error("Create order error:", error);
 
     res.status(500).json({
       message: error.message,
@@ -236,6 +225,7 @@ calculatedTotal += product.price * quantity;
   }
 });
 
+// Update Order Status - Admin Only
 router.put("/:id", protect, adminOnly, async (req, res) => {
   try {
     const allowedStatuses = [
@@ -269,8 +259,26 @@ router.put("/:id", protect, adminOnly, async (req, res) => {
       });
     }
 
-    // Restore stock only when an order
-    // is being cancelled for the first time
+    // -----------------------------------------------------
+    // FINAL STATUSES
+    // -----------------------------------------------------
+    // Once an order is Delivered or Cancelled,
+    // it cannot be moved to another status.
+    if (
+      order.status === "Delivered" ||
+      order.status === "Cancelled"
+    ) {
+      return res.status(400).json({
+        message: `Order is already ${order.status} and cannot be changed`,
+      });
+    }
+
+    // -----------------------------------------------------
+    // CANCEL ORDER
+    // -----------------------------------------------------
+    // Restore stock only when an active order is cancelled.
+    // Because Cancelled is a final status, stock cannot
+    // accidentally be restored multiple times.
     if (status === "Cancelled") {
       await restoreStock(order.products);
     }
@@ -280,7 +288,6 @@ router.put("/:id", protect, adminOnly, async (req, res) => {
     await order.save();
 
     res.json(order);
-
   } catch (error) {
     console.error("Update order status error:", error);
 
@@ -293,37 +300,28 @@ router.put("/:id", protect, adminOnly, async (req, res) => {
 // Dashboard Stats
 router.get("/dashboard", protect, adminOnly, async (req, res) => {
   try {
+    const totalProducts = await Product.countDocuments();
 
-    const totalProducts =
-      await Product.countDocuments();
+    const totalOrders = await Order.countDocuments();
 
-    const totalOrders =
-      await Order.countDocuments();
+    const pendingOrders = await Order.countDocuments({
+      status: "Pending",
+    });
 
-    const pendingOrders =
-      await Order.countDocuments({
-        status: "Pending",
-      });
+    const shippedOrders = await Order.countDocuments({
+      status: "Shipped",
+    });
 
-      const shippedOrders =
-  await Order.countDocuments({
-    status: "Shipped",
-  });
+    const deliveredOrders = await Order.countDocuments({
+      status: "Delivered",
+    });
 
-const deliveredOrders =
-  await Order.countDocuments({
-    status: "Delivered",
-  });
+    const orders = await Order.find();
 
-    const orders =
-      await Order.find();
-
-    const totalRevenue =
-      orders.reduce(
-        (sum, order) =>
-          sum + order.totalPrice,
-        0
-      );
+    const totalRevenue = orders.reduce(
+      (sum, order) => sum + order.totalPrice,
+      0
+    );
 
     res.json({
       totalProducts,
@@ -333,7 +331,6 @@ const deliveredOrders =
       deliveredOrders,
       totalRevenue,
     });
-
   } catch (error) {
     res.status(500).json({
       message: error.message,
