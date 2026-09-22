@@ -121,20 +121,38 @@ router.put("/update-stock", protect, async (req, res) => {
 
 router.put("/:id", protect, adminOnly, async (req, res) => {
   try {
-    const updatedProduct =
-      await Product.findByIdAndUpdate(
-        req.params.id,
-        req.body,
-        {
-          returnDocument:"after",
-           runValidators: true,
-        }
-      );
+    const updatedProduct = await Product.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      {
+        returnDocument: "after",
+        runValidators: true,
+      }
+    );
+
+    if (!updatedProduct) {
+      return res.status(404).json({
+        message: "Product not found",
+      });
+    }
 
     res.json(updatedProduct);
   } catch (error) {
+    if (error.name === "CastError") {
+      return res.status(400).json({
+        message: "Invalid product ID",
+      });
+    }
+
+    if (error.name === "ValidationError") {
+      return res.status(400).json({
+        message: error.message,
+      });
+    }
+
+    console.error("Update product error:", error);
     res.status(500).json({
-      message: error.message,
+      message: "Server error while updating product",
     });
   }
 });
