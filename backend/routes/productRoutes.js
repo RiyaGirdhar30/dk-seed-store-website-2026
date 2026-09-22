@@ -31,48 +31,6 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-router.get("/addsample", async (req, res) => {
-  try {
-    const product = await Product.create({
-      name: "Bajra Seeds",
-      price: 500,
-      category: "Grains",
-      image:
-        "https://images.unsplash.com/photo-1574943320219-553eb213f72d?w=500",
-      rating: 4.8,
-      stock: "In Stock",
-      discount: "10% OFF",
-    });
-
-    res.json(product);
-  } catch (error) {
-    res.status(500).json({
-      message: error.message,
-    });
-  }
-});
-
-router.get("/addwheat", async (req, res) => {
-  try {
-    const product = await Product.create({
-      name: "Wheat Seeds",
-      price: 700,
-      category: "Grains",
-      image:
-        "https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=500",
-      rating: 4.9,
-      stock: "In Stock",
-      discount: "15% OFF",
-    });
-
-    res.json(product);
-  } catch (error) {
-    res.status(500).json({
-      message: error.message,
-    });
-  }
-});
-
 router.post("/", protect, adminOnly, async (req, res) => {
   try {
     const product = await Product.create(req.body);
