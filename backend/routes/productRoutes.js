@@ -127,6 +127,7 @@ router.put("/:id", protect, adminOnly, async (req, res) => {
         req.body,
         {
           returnDocument:"after",
+           runValidators: true,
         }
       );
 
