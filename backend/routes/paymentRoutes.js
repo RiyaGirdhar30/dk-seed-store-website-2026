@@ -1,17 +1,19 @@
 const express = require("express");
 const router = express.Router();
 const crypto = require("crypto");
+const mongoose = require("mongoose");
+
 const razorpay = require("../config/razorpay");
 const protect = require("../middleware/authMiddleware");
 const Order = require("../models/Order");
 const Product = require("../models/Product");
 const updateStock = require("../utils/updateStock");
 
+// Create Razorpay Order
 router.post("/create-order", protect, async (req, res) => {
   try {
     const { products } = req.body;
 
-    // Make sure products were provided
     if (!Array.isArray(products) || products.length === 0) {
       return res.status(400).json({
         message: "No products provided",
@@ -32,10 +34,7 @@ router.post("/create-order", protect, async (req, res) => {
 
       const quantity = Number(item.quantity);
 
-      if (
-        !Number.isInteger(quantity) ||
-        quantity <= 0
-      ) {
+      if (!Number.isInteger(quantity) || quantity <= 0) {
         return res.status(400).json({
           message: `Invalid quantity for ${product.name}`,
         });
@@ -49,8 +48,7 @@ router.post("/create-order", protect, async (req, res) => {
         });
       }
 
-      calculatedTotal +=
-        product.price * quantity;
+      calculatedTotal += product.price * quantity;
     }
 
     const options = {
@@ -59,19 +57,14 @@ router.post("/create-order", protect, async (req, res) => {
       receipt: `receipt_${Date.now()}`,
     };
 
-    const razorpayOrder =
-      await razorpay.orders.create(options);
+    const razorpayOrder = await razorpay.orders.create(options);
 
     res.json({
       ...razorpayOrder,
       calculatedTotal,
     });
-
   } catch (error) {
-    console.error(
-      "Create Razorpay order error:",
-      error
-    );
+    console.error("Create Razorpay order error:", error);
 
     res.status(500).json({
       message: "Unable to create Razorpay order",
@@ -79,6 +72,7 @@ router.post("/create-order", protect, async (req, res) => {
   }
 });
 
+// Verify Razorpay Payment
 router.post("/verify", protect, async (req, res) => {
   try {
     const {
@@ -97,16 +91,15 @@ router.post("/verify", protect, async (req, res) => {
       });
     }
 
-    const generatedSignature =
-      crypto
-        .createHmac(
-          "sha256",
-          process.env.RAZORPAY_KEY_SECRET
-        )
-        .update(
-          `${razorpay_order_id}|${razorpay_payment_id}`
-        )
-        .digest("hex");
+    const generatedSignature = crypto
+      .createHmac(
+        "sha256",
+        process.env.RAZORPAY_KEY_SECRET
+      )
+      .update(
+        `${razorpay_order_id}|${razorpay_payment_id}`
+      )
+      .digest("hex");
 
     if (generatedSignature !== razorpay_signature) {
       return res.status(400).json({
@@ -114,41 +107,56 @@ router.post("/verify", protect, async (req, res) => {
       });
     }
 
-    const order = await Order.findOne({
-      razorpayOrderId: razorpay_order_id,
-      userId: req.user.userId,
-    });
+    const session = await mongoose.startSession();
 
-    if (!order) {
-      return res.status(404).json({
-        message: "Order not found",
+    try {
+      session.startTransaction();
+
+      const order = await Order.findOne({
+        razorpayOrderId: razorpay_order_id,
+        userId: req.user.userId,
+      }).session(session);
+
+      if (!order) {
+        await session.abortTransaction();
+
+        return res.status(404).json({
+          message: "Order not found",
+        });
+      }
+
+      // Prevent duplicate payment verification
+      if (order.paymentStatus === "Paid") {
+        await session.abortTransaction();
+
+        return res.status(400).json({
+          message: "Payment has already been verified",
+          order,
+        });
+      }
+
+      // Update stock inside the same transaction
+      await updateStock(order.products, session);
+
+      // Mark payment as paid
+      order.razorpayPaymentId = razorpay_payment_id;
+      order.razorpaySignature = razorpay_signature;
+      order.paymentStatus = "Paid";
+
+      await order.save({ session });
+
+      await session.commitTransaction();
+
+      res.json({
+        message: "Payment verified successfully",
+        order,
       });
+    } catch (error) {
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      await session.endSession();
     }
-
-    if (order.paymentStatus === "Paid") {
-  return res.status(400).json({
-    message: "Payment has already been verified",
-    order,
-  });
-}
-
-   order.razorpayPaymentId =
-  razorpay_payment_id;
-
-order.razorpaySignature =
-  razorpay_signature;
-
-order.paymentStatus = "Paid";
-
-await updateStock(order.products);
-
-await order.save();
-
-    res.json({
-      message: "Payment verified successfully",
-      order,
-    });
-
   } catch (error) {
     console.error("Payment verification error:", error);
 

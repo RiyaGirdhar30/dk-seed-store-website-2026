@@ -1,4 +1,5 @@
 const express = require("express");
+const mongoose = require("mongoose");
 const Order = require("../models/Order");
 const Product = require("../models/Product");
 const User = require("../models/User");
@@ -93,10 +94,6 @@ router.post("/", protect, async (req, res) => {
   try {
     const { products, paymentMethod, razorpayOrderId } = req.body;
 
-    // =====================================================
-    // FIND LOGGED-IN USER
-    // =====================================================
-
     const user = await User.findById(req.user.userId);
 
     if (!user) {
@@ -105,19 +102,11 @@ router.post("/", protect, async (req, res) => {
       });
     }
 
-    // =====================================================
-    // VALIDATE PRODUCTS
-    // =====================================================
-
     if (!Array.isArray(products) || products.length === 0) {
       return res.status(400).json({
         message: "No products provided",
       });
     }
-
-    // =====================================================
-    // VALIDATE PAYMENT METHOD
-    // =====================================================
 
     if (!["Online", "COD"].includes(paymentMethod)) {
       return res.status(400).json({
@@ -125,12 +114,7 @@ router.post("/", protect, async (req, res) => {
       });
     }
 
-    // =====================================================
-    // CALCULATE TOTAL FROM DATABASE
-    // =====================================================
-
     let calculatedTotal = 0;
-
     const orderProducts = [];
 
     for (const item of products) {
@@ -150,7 +134,6 @@ router.post("/", protect, async (req, res) => {
         });
       }
 
-      // Check stock
       if (product.stock < quantity) {
         return res.status(400).json({
           message:
@@ -159,61 +142,64 @@ router.post("/", protect, async (req, res) => {
         });
       }
 
-      // Use REAL database product details
       orderProducts.push({
         _id: product._id,
         name: product.name,
         price: product.price,
-        quantity: quantity,
+        quantity,
       });
 
-      // Use REAL database price
       calculatedTotal += product.price * quantity;
     }
 
-    // =====================================================
-    // CREATE ORDER
-    // =====================================================
-
-    const order = await Order.create({
+    const orderData = {
       products: orderProducts,
-
-      // NEVER trust frontend email
       userEmail: user.email,
-
-      // NEVER trust frontend userId
       userId: req.user.userId,
-
-      // NEVER trust frontend totalPrice
       totalPrice: calculatedTotal,
-
       paymentMethod,
-
-      // New orders always start as Pending
       paymentStatus: "Pending",
-
-      // Only Online orders should have Razorpay ID
       razorpayOrderId:
         paymentMethod === "Online"
           ? razorpayOrderId
           : undefined,
-
       shippingAddress: {
         street: user.address?.street || "",
         city: user.address?.city || "",
         state: user.address?.state || "",
         pincode: user.address?.pincode || "",
       },
-    });
+    };
 
-    // =====================================================
-    // COD → UPDATE STOCK IMMEDIATELY
-    // ONLINE → STOCK UPDATED AFTER PAYMENT VERIFICATION
-    // =====================================================
-
+    // COD:
+    // Create the order and update stock inside one transaction.
     if (paymentMethod === "COD") {
-      await updateStock(orderProducts);
+      const session = await mongoose.startSession();
+
+      try {
+        session.startTransaction();
+
+        const [order] = await Order.create(
+          [orderData],
+          { session }
+        );
+
+        await updateStock(orderProducts, session);
+
+        await session.commitTransaction();
+
+        return res.status(201).json(order);
+      } catch (error) {
+        await session.abortTransaction();
+        throw error;
+      } finally {
+        await session.endSession();
+      }
     }
+
+    // Online:
+    // Stock is updated only after Razorpay payment verification.
+    const order = await Order.create(orderData);
 
     res.status(201).json(order);
   } catch (error) {
