@@ -49,8 +49,22 @@ router.post("/", protect, adminOnly, async (req, res) => {
 
     res.status(201).json(product);
   } catch (error) {
+    if (error.name === "ValidationError") {
+      return res.status(400).json({
+        message: error.message,
+      });
+    }
+
+    if (error.name === "CastError") {
+      return res.status(400).json({
+        message: "Invalid product data",
+      });
+    }
+
+    console.error("Create product error:", error);
+
     res.status(500).json({
-      message: error.message,
+      message: "Server error while creating product",
     });
   }
 });
