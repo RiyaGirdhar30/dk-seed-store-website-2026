@@ -55,6 +55,47 @@ router.get("/my", protect, async (req, res) => {
   }
 });
 
+// Dashboard Stats
+router.get("/dashboard", protect, adminOnly, async (req, res) => {
+  try {
+    const totalProducts = await Product.countDocuments();
+
+    const totalOrders = await Order.countDocuments();
+
+    const pendingOrders = await Order.countDocuments({
+      status: "Pending",
+    });
+
+    const shippedOrders = await Order.countDocuments({
+      status: "Shipped",
+    });
+
+    const deliveredOrders = await Order.countDocuments({
+      status: "Delivered",
+    });
+
+    const orders = await Order.find();
+
+    const totalRevenue = orders.reduce(
+      (sum, order) => sum + order.totalPrice,
+      0
+    );
+
+    res.json({
+      totalProducts,
+      totalOrders,
+      pendingOrders,
+      shippedOrders,
+      deliveredOrders,
+      totalRevenue,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+});
+
 // Get Single Order
 router.get("/:id", protect, async (req, res) => {
   try {
@@ -283,45 +324,5 @@ router.put("/:id", protect, adminOnly, async (req, res) => {
   }
 });
 
-// Dashboard Stats
-router.get("/dashboard", protect, adminOnly, async (req, res) => {
-  try {
-    const totalProducts = await Product.countDocuments();
-
-    const totalOrders = await Order.countDocuments();
-
-    const pendingOrders = await Order.countDocuments({
-      status: "Pending",
-    });
-
-    const shippedOrders = await Order.countDocuments({
-      status: "Shipped",
-    });
-
-    const deliveredOrders = await Order.countDocuments({
-      status: "Delivered",
-    });
-
-    const orders = await Order.find();
-
-    const totalRevenue = orders.reduce(
-      (sum, order) => sum + order.totalPrice,
-      0
-    );
-
-    res.json({
-      totalProducts,
-      totalOrders,
-      pendingOrders,
-      shippedOrders,
-      deliveredOrders,
-      totalRevenue,
-    });
-  } catch (error) {
-    res.status(500).json({
-      message: error.message,
-    });
-  }
-});
 
 module.exports = router;
