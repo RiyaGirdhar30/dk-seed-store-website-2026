@@ -165,16 +165,22 @@ router.put("/:id", protect, adminOnly, async (req, res) => {
     res.json(updatedProduct);
   } catch (error) {
     if (error.name === "CastError") {
-      return res.status(400).json({
-        message: "Invalid product ID",
-      });
-    }
+  if (error.path === "_id") {
+    return res.status(400).json({
+      message: "Invalid product ID",
+    });
+  }
 
-    if (error.name === "ValidationError") {
-      return res.status(400).json({
-        message: error.message,
-      });
-    }
+  return res.status(400).json({
+    message: error.message,
+  });
+}
+
+if (error.name === "ValidationError") {
+  return res.status(400).json({
+    message: error.message,
+  });
+}
 
     console.error("Update product error:", error);
     res.status(500).json({
