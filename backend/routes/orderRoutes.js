@@ -123,11 +123,19 @@ router.get("/:id", protect, async (req, res) => {
     }
 
     res.json(order);
-  } catch (error) {
-    res.status(500).json({
-      message: error.message,
+ } catch (error) {
+  if (error.name === "CastError" && error.path === "_id") {
+    return res.status(400).json({
+      message: "Invalid order ID",
     });
   }
+
+  console.error("Get order error:", error);
+
+  res.status(500).json({
+    message: error.message,
+  });
+}
 });
 
 // Create Order
