@@ -324,12 +324,18 @@ router.put("/:id", protect, adminOnly, async (req, res) => {
 
     res.json(order);
   } catch (error) {
-    console.error("Update order status error:", error);
-
-    res.status(500).json({
-      message: error.message,
+  if (error.name === "CastError" && error.path === "_id") {
+    return res.status(400).json({
+      message: "Invalid order ID",
     });
   }
+
+  console.error("Update order status error:", error);
+
+  res.status(500).json({
+    message: error.message,
+  });
+}
 });
 
 
