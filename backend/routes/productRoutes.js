@@ -185,17 +185,30 @@ router.put("/:id", protect, adminOnly, async (req, res) => {
 
 router.delete("/:id", protect, adminOnly, async (req, res) => {
   try {
-    await Product.findByIdAndDelete(
+    const deletedProduct = await Product.findByIdAndDelete(
       req.params.id
     );
 
+    if (!deletedProduct) {
+      return res.status(404).json({
+        message: "Product not found",
+      });
+    }
+
     res.json({
-      message:
-        "Product Deleted Successfully",
+      message: "Product Deleted Successfully",
     });
   } catch (error) {
+    if (error.name === "CastError") {
+      return res.status(400).json({
+        message: "Invalid product ID",
+      });
+    }
+
+    console.error("Delete product error:", error);
+
     res.status(500).json({
-      message: error.message,
+      message: "Server error while deleting product",
     });
   }
 });
