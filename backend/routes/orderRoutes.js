@@ -167,6 +167,11 @@ router.post("/", protect, async (req, res) => {
     const orderProducts = [];
 
     for (const item of products) {
+      if (!mongoose.Types.ObjectId.isValid(item._id)) {
+  return res.status(400).json({
+    message: "Invalid product ID",
+  });
+}
       const product = await Product.findById(item._id);
 
       if (!product) {
