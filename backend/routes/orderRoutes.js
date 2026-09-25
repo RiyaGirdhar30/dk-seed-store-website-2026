@@ -123,19 +123,19 @@ router.get("/:id", protect, async (req, res) => {
     }
 
     res.json(order);
- } catch (error) {
-  if (error.name === "CastError" && error.path === "_id") {
-    return res.status(400).json({
-      message: "Invalid order ID",
+  } catch (error) {
+    if (error.name === "CastError" && error.path === "_id") {
+      return res.status(400).json({
+        message: "Invalid order ID",
+      });
+    }
+
+    console.error("Get order error:", error);
+
+    res.status(500).json({
+      message: error.message,
     });
   }
-
-  console.error("Get order error:", error);
-
-  res.status(500).json({
-    message: error.message,
-  });
-}
 });
 
 // Create Order
@@ -175,13 +175,18 @@ router.post("/", protect, async (req, res) => {
         });
       }
 
-      const quantity = Number(item.quantity);
-
-      if (!Number.isInteger(quantity) || quantity <= 0) {
+      // Quantity must be a real number, not a numeric string.
+      if (
+        typeof item.quantity !== "number" ||
+        !Number.isInteger(item.quantity) ||
+        item.quantity <= 0
+      ) {
         return res.status(400).json({
           message: `Invalid quantity for ${product.name}`,
         });
       }
+
+      const quantity = item.quantity;
 
       if (product.stock < quantity) {
         return res.status(400).json({
@@ -324,19 +329,18 @@ router.put("/:id", protect, adminOnly, async (req, res) => {
 
     res.json(order);
   } catch (error) {
-  if (error.name === "CastError" && error.path === "_id") {
-    return res.status(400).json({
-      message: "Invalid order ID",
+    if (error.name === "CastError" && error.path === "_id") {
+      return res.status(400).json({
+        message: "Invalid order ID",
+      });
+    }
+
+    console.error("Update order status error:", error);
+
+    res.status(500).json({
+      message: error.message,
     });
   }
-
-  console.error("Update order status error:", error);
-
-  res.status(500).json({
-    message: error.message,
-  });
-}
 });
-
 
 module.exports = router;
