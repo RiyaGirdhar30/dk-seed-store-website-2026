@@ -17,6 +17,15 @@ router.post("/register", async (req, res) => {
       });
     }
 
+    // Check email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailRegex.test(email.trim())) {
+      return res.status(400).json({
+        message: "Invalid email",
+      });
+    }
+
     // Check password length
     if (password.length < 6) {
       return res.status(400).json({
@@ -156,11 +165,7 @@ router.get("/me", protect, async (req, res) => {
 // Update Current User Profile
 router.put("/me", protect, async (req, res) => {
   try {
-    const {
-      name,
-      phone,
-      address,
-    } = req.body;
+    const { name, phone, address } = req.body;
 
     // Validate name
     if (!name || !name.trim()) {
@@ -169,24 +174,23 @@ router.put("/me", protect, async (req, res) => {
       });
     }
 
-    const updatedUser =
-      await User.findByIdAndUpdate(
-        req.user.userId,
-        {
-          name: name.trim(),
-          phone: phone || "",
-          address: {
-            street: address?.street || "",
-            city: address?.city || "",
-            state: address?.state || "",
-            pincode: address?.pincode || "",
-          },
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user.userId,
+      {
+        name: name.trim(),
+        phone: phone || "",
+        address: {
+          street: address?.street || "",
+          city: address?.city || "",
+          state: address?.state || "",
+          pincode: address?.pincode || "",
         },
-        {
-          new: true,
-          runValidators: true,
-        }
-      ).select("-password");
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    ).select("-password");
 
     if (!updatedUser) {
       return res.status(404).json({
@@ -198,7 +202,6 @@ router.put("/me", protect, async (req, res) => {
       message: "Profile updated successfully",
       user: updatedUser,
     });
-
   } catch (error) {
     console.error("Update profile error:", error);
 
@@ -211,31 +214,24 @@ router.put("/me", protect, async (req, res) => {
 // Change Current User Password
 router.put("/change-password", protect, async (req, res) => {
   try {
-    const {
-      currentPassword,
-      newPassword,
-    } = req.body;
+    const { currentPassword, newPassword } = req.body;
 
     // Check required fields
     if (!currentPassword || !newPassword) {
       return res.status(400).json({
-        message:
-          "Current password and new password are required",
+        message: "Current password and new password are required",
       });
     }
 
     // Check new password length
     if (newPassword.length < 6) {
       return res.status(400).json({
-        message:
-          "New password must be at least 6 characters",
+        message: "New password must be at least 6 characters",
       });
     }
 
     // Find logged-in user
-    const user = await User.findById(
-      req.user.userId
-    );
+    const user = await User.findById(req.user.userId);
 
     if (!user) {
       return res.status(404).json({
@@ -244,11 +240,10 @@ router.put("/change-password", protect, async (req, res) => {
     }
 
     // Verify current password
-    const isPasswordCorrect =
-      await bcrypt.compare(
-        currentPassword,
-        user.password
-      );
+    const isPasswordCorrect = await bcrypt.compare(
+      currentPassword,
+      user.password
+    );
 
     if (!isPasswordCorrect) {
       return res.status(401).json({
@@ -257,8 +252,7 @@ router.put("/change-password", protect, async (req, res) => {
     }
 
     // Hash new password
-    const hashedPassword =
-      await bcrypt.hash(newPassword, 10);
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
 
     user.password = hashedPassword;
 
@@ -267,16 +261,11 @@ router.put("/change-password", protect, async (req, res) => {
     res.status(200).json({
       message: "Password changed successfully",
     });
-
   } catch (error) {
-    console.error(
-      "Change password error:",
-      error
-    );
+    console.error("Change password error:", error);
 
     res.status(500).json({
-      message:
-        "Server error while changing password",
+      message: "Server error while changing password",
     });
   }
 });
