@@ -32,7 +32,17 @@ const cors = require("cors");
 
 app.use(express.json());
 
-app.use(cors());
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://dk-seed-store-website-2026.vercel.app",
+  process.env.FRONTEND_URL,
+].filter(Boolean);
+
+app.use(
+  cors({
+    origin: allowedOrigins,
+  })
+);
 
 app.use("/api/products", productRoutes);
 
