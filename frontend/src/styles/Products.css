@@ -1,125 +1,153 @@
-.products-page{
-    padding:50px;
+.products-page {
+  padding: 50px;
 }
 
-.products-page h1{
-    text-align:center;
-    margin-bottom:40px;
-    color:#2e7d32;
+.products-page h1 {
+  text-align: center;
+  margin-bottom: 40px;
+  color: #2e7d32;
 }
 
-.products-grid{
-    display:grid;
-    grid-template-columns:repeat(4,1fr);
-    gap:25px;
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 25px;
 }
 
-.product-card{
-    background:white;
-    border-radius:15px;
-    overflow:hidden;
-    box-shadow:0 2px 10px rgba(0,0,0,0.1);
+.product-card {
+  background: white;
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s, box-shadow 0.3s;
 }
 
-.product-card img{
-    width:100%;
-    height:220px;
-    object-fit:cover;
+.product-card img {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
 }
 
-.product-info{
-    padding:20px;
-    text-align:center;
+.product-info {
+  padding: 20px;
+  text-align: center;
 }
 
-.product-info h3{
-    margin-bottom:10px;
+.product-info h3 {
+  margin-bottom: 10px;
 }
 
-.product-info p{
-    color:#2e7d32;
-    font-weight:bold;
-    margin-bottom:15px;
+.product-info p {
+  color: #2e7d32;
+  font-weight: bold;
+  margin-bottom: 15px;
 }
 
-.product-info button{
-    padding:10px 20px;
-    border:none;
-    background:#2e7d32;
-    color:white;
-    border-radius:8px;
-    cursor:pointer;
+.product-info button {
+  padding: 10px 20px;
+  border: none;
+  background: #2e7d32;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
 }
 
-.product-card:hover{
-    transform:translateY(-8px);
-    box-shadow:0 10px 25px rgba(0,0,0,0.15);
+.product-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
 }
 
-.filter-btn{
-    padding:10px 20px;
-    border:none;
-    background:#2e7d32;
-    color:white;
-    border-radius:8px;
-    cursor:pointer;
-    transition:0.3s;
+.filter-btn {
+  padding: 10px 20px;
+  border: none;
+  background: #2e7d32;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.3s;
 }
 
-.filter-btn:hover{
-    transform:translateY(-2px);
+.filter-btn:hover {
+  transform: translateY(-2px);
 }
 
-.search-box{
-    display:block;
-    width:300px;
-    padding:12px;
-    margin:0 auto 30px;
-    border:1px solid #ccc;
-    border-radius:8px;
+.search-box {
+  display: block;
+  width: 300px;
+  padding: 12px;
+  margin: 0 auto 30px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
 }
 
-.filter-buttons{
-    display:flex;
-    justify-content:center;
-    gap:10px;
-    margin-bottom:30px;
+.filter-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 30px;
 }
 
-@media (max-width:768px){
-
-.products-page{
-    padding:20px;
+/* Empty search/filter result */
+.no-products {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 60px 20px;
 }
 
-.products-page h1{
-    font-size:2rem;
+.no-products h2 {
+  color: #2e7d32;
+  margin-bottom: 10px;
 }
 
-.search-box{
-    width:100%;
-    box-sizing:border-box;
+.no-products p {
+  color: #666;
+  font-weight: normal;
 }
 
-.filter-buttons{
-    flex-wrap:wrap;
+/* Tablet */
+@media (max-width: 1100px) {
+  .products-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
-.products-grid{
-    grid-template-columns:1fr;
-}
+/* Mobile */
+@media (max-width: 767px) {
+  .products-page {
+    padding: 20px;
+  }
 
-.product-card img{
-    height:220px;
-object-fit:cover;
-}
+  .products-page h1 {
+    font-size: 2rem;
+  }
 
-.product-info{
-    padding:15px;
-}
+  .search-box {
+    width: 100%;
+    box-sizing: border-box;
+  }
 
-.product-info button{
-    width:100%;
-}
+  .filter-buttons {
+    flex-wrap: wrap;
+  }
 
+  .products-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .product-card img {
+    height: 220px;
+    object-fit: cover;
+  }
+
+  .product-info {
+    padding: 15px;
+  }
+
+  .product-info button {
+    width: 100%;
+  }
+
+  .no-products {
+    padding: 50px 10px;
+  }
 }
