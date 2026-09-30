@@ -24,7 +24,7 @@
 
 .product-card img {
   width: 100%;
-  height: 220px;
+  height: 280px;  
   object-fit: cover;
 }
 
@@ -135,7 +135,7 @@
   }
 
   .product-card img {
-    height: 220px;
+    height: 280px;
     object-fit: cover;
   }
 
